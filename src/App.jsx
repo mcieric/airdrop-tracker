@@ -47,46 +47,32 @@ export default function App() {
 
   return (
     <main style={{ background: "#1A1A1A", color: "white", minHeight: "100vh", padding: "40px 20px", fontFamily: "Arial, sans-serif" }}>
-      {/* --- HEADER BADGE (inline styles, fonctionne sans Tailwind) --- */}
+      {/* HEADER */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div
           style={{
-            background: "#FCFF52",
-            color: "#000",
-            display: "inline-block",
-            padding: "10px 20px",
-            borderRadius: 12,
-            fontWeight: 800,
-            fontSize: 24,
-            letterSpacing: "1px",
+            background: "#FCFF52", color: "#000", display: "inline-block",
+            padding: "10px 20px", borderRadius: 12, fontWeight: 800, fontSize: 24, letterSpacing: "1px",
           }}
         >
           AIRDROP TRACKER
         </div>
       </div>
 
-      {/* Totaux */}
-      <section style={{ display: "flex", justifyContent: "center", gap: 40, marginBottom: 30 }}>
+      {/* CARDS */}
+      <section style={{ display: "flex", justifyContent: "center", gap: 40, marginBottom: 30, flexWrap: "wrap" }}>
         <Card title="Claim Total" value={usd(totals.claim)} />
         <Card title="Current Total" value={usd(totals.current)} accent />
         <Card title="Total PNL" value={usd(totals.pnl)} tone={totals.pnl>0?"good":totals.pnl<0?"bad":"neutral"} />
       </section>
 
-      {/* Tableau principal */}
+      {/* TABLE */}
       <section style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <h2 style={{ fontSize: 20, fontWeight: "bold" }}>Airdrops</h2>
           <button
             onClick={addRow}
-            style={{
-              background: CELO_YELLOW,
-              color: "black",
-              fontWeight: 600,
-              border: "none",
-              borderRadius: 6,
-              padding: "6px 14px",
-              cursor: "pointer",
-            }}
+            style={{ background: CELO_YELLOW, color: "black", fontWeight: 600, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer" }}
           >
             + Add
           </button>
@@ -109,11 +95,7 @@ export default function App() {
             </thead>
             <tbody>
               {rows.length===0 && (
-                <tr>
-                  <td colSpan={11} style={{ textAlign: "center", padding: 20, color: "#999" }}>
-                    Click “+ Add” to start.
-                  </td>
-                </tr>
+                <tr><td colSpan={11} style={{ textAlign: "center", padding: 20, color: "#999" }}>Click “+ Add” to start.</td></tr>
               )}
               {rows.map(r=>{
                 const curr = (Number(r.qty)||0) * (Number(r.priceNow)||0);
@@ -136,15 +118,7 @@ export default function App() {
                         <button
                           onClick={()=>refreshPrice(r.id, r.cgId)}
                           disabled={!r.cgId || loadingId===r.id}
-                          style={{
-                            background: CELO_YELLOW,
-                            border: "none",
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            cursor: "pointer",
-                            opacity: loadingId===r.id?0.6:1,
-                            fontWeight: "bold"
-                          }}
+                          style={{ background: CELO_YELLOW, border: "none", padding: "2px 6px", borderRadius: 4, cursor: "pointer", opacity: loadingId===r.id?0.6:1, fontWeight: "bold" }}
                           title="Refresh price"
                         >
                           {loadingId===r.id? "…" : "↻"}
@@ -162,14 +136,7 @@ export default function App() {
                               const n = Number(val);
                               if(!Number.isNaN(n) && n>0) updateRow(r.id,{soldUsd:n});
                             }}
-                            style={{
-                              background: CELO_YELLOW,
-                              border: "none",
-                              padding: "4px 10px",
-                              borderRadius: 4,
-                              fontWeight: 600,
-                              cursor: "pointer"
-                            }}
+                            style={{ background: CELO_YELLOW, border: "none", padding: "4px 10px", borderRadius: 4, fontWeight: 600, cursor: "pointer" }}
                           >
                             SELL
                           </button>
@@ -197,21 +164,14 @@ function Card({ title, value, accent=false, tone="neutral" }) {
   const color = tone==="good"?"limegreen": tone==="bad"?"red":"white";
   return (
     <div style={{
-      background: "#121212",
-      borderRadius: 12,
-      padding: 20,
-      border: `1px solid ${CELO_YELLOW}`,
-      width: 200,
-      textAlign: "center",
+      background: "#121212", borderRadius: 12, padding: 20,
+      border: `1px solid ${CELO_YELLOW}`, width: 220, textAlign: "center",
       boxShadow: "0 0 10px rgba(0,0,0,0.4)"
     }}>
       <div style={{ fontSize: 12, color: "#aaa" }}>{title}</div>
-      <div style={{
-        fontSize: 22,
-        fontWeight: 800,
-        marginTop: 6,
-        color: accent? CELO_YELLOW : color
-      }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 6, color: accent? CELO_YELLOW : color }}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -219,7 +179,6 @@ function Card({ title, value, accent=false, tone="neutral" }) {
 function Th({children, align="left"}) {
   return <th style={{ textAlign: align, padding: "8px 10px", fontWeight: 600 }}>{children}</th>;
 }
-
 function Td({children, align="left"}) {
   return <td style={{ textAlign: align, padding: "6px 10px" }}>{children}</td>;
 }
