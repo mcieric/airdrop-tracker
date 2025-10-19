@@ -1,5 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body { background:#1A1A1A; color:#fff; font-family:'Satoshi',sans-serif; }
+/* src/index.css : version simple, sans Tailwind */
+html,body { margin:0; padding:0; background:#1A1A1A; color:#fff; font-family: Arial, sans-serif; }
+* { box-sizing: border-box; }
