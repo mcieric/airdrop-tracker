@@ -14,33 +14,27 @@ function usd(n) {
 }
 
 export default function App() {
-  // --- state & persistence ---
+  // --- Data & persistence ---
   const [rows, setRows] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_KEY)) ?? [];
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) ?? []; }
+    catch { return []; }
   });
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(rows));
-  }, [rows]);
+  useEffect(() => { localStorage.setItem(LS_KEY, JSON.stringify(rows)); }, [rows]);
 
   const [loadingId, setLoadingId] = useState(null);
 
-  // --- totals ---
+  // --- Totals ---
   const totals = useMemo(() => {
     const claim = rows.reduce((s, r) => s + (Number(r.claimUsd) || 0), 0);
     const current = rows.reduce(
       (s, r) => s + (Number(r.qty) || 0) * (Number(r.priceNow) || 0),
       0
     );
-    const pnl = current - claim;
-    return { claim, current, pnl };
+    return { claim, current, pnl: current - claim };
   }, [rows]);
 
-  // --- helpers ---
-  function addRow() {
+  // --- Row helpers ---
+  const addRow = () =>
     setRows((r) => [
       ...r,
       {
@@ -55,13 +49,11 @@ export default function App() {
         soldUsd: null,
       },
     ]);
-  }
-  function updateRow(id, patch) {
+
+  const updateRow = (id, patch) =>
     setRows((r) => r.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  }
-  function removeRow(id) {
-    setRows((r) => r.filter((x) => x.id !== id));
-  }
+
+  const removeRow = (id) => setRows((r) => r.filter((x) => x.id !== id));
 
   async function refreshPrice(id, cgId) {
     if (!cgId) return;
@@ -74,14 +66,11 @@ export default function App() {
       const j = await res.json();
       const p = j?.[cgId]?.usd;
       if (typeof p === "number") updateRow(id, { priceNow: p });
-    } catch {
-      // ignore network errors for MVP
     } finally {
       setLoadingId(null);
     }
   }
 
-  // --- UI ---
   return (
     <main
       style={{
@@ -92,13 +81,15 @@ export default function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      {/* HEADER (badge jaune) */}
+      {/* HEADER avec logo + badge jaune */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 12,
             background: CELO_YELLOW,
             color: "#000",
-            display: "inline-block",
             padding: "10px 20px",
             borderRadius: 12,
             fontWeight: 800,
@@ -107,6 +98,12 @@ export default function App() {
             boxShadow: "0 8px 30px rgba(252,255,82,0.25)",
           }}
         >
+          <img
+            src="/src/assets/logo.png"
+            alt="Airdrop Tracker"
+            style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 8 }}
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
           AIRDROP TRACKER
         </div>
       </div>
@@ -240,14 +237,7 @@ export default function App() {
                       />
                     </Td>
                     <Td align="right">
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
                         <span>{usd(current)}</span>
                         <button
                           onClick={() => refreshPrice(r.id, r.cgId)}
@@ -337,14 +327,7 @@ function Card({ title, value, accent = false, tone = "neutral" }) {
       }}
     >
       <div style={{ fontSize: 12, color: "#aaa" }}>{title}</div>
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 800,
-          marginTop: 6,
-          color: accent ? CELO_YELLOW : color,
-        }}
-      >
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 6, color: accent ? CELO_YELLOW : color }}>
         {value}
       </div>
     </div>
