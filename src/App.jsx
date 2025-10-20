@@ -63,7 +63,7 @@ function App() {
       {/* --- HEADER --- */}
       <div className="flex items-center bg-[#FFF84F] text-black px-6 py-3 rounded-2xl shadow-lg mb-8">
         <img
-          src="/logo.png"
+          src={`${import.meta.env.BASE_URL}logo.png`}
           alt="Airdrop Tracker"
           style={{
             width: 48,
