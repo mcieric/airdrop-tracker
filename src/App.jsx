@@ -7,6 +7,7 @@ import Toolbar from "./components/Toolbar";
 const CELO_YELLOW = "#FCFF52";
 const LS_KEY = "airdrop_tracker_rows_v1";
 
+// ---------- Utils ----------
 function usd(n) {
   if (n == null || Number.isNaN(n)) return "—";
   return Number(n).toLocaleString(undefined, {
@@ -45,9 +46,11 @@ function calcTotals(rows) {
   );
 }
 
+// ---------- App ----------
 export default function App() {
   const { theme, toggleTheme } = useTheme();
 
+  // Data & persistence
   const [rows, setRows] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(LS_KEY)) ?? [];
@@ -59,10 +62,12 @@ export default function App() {
     localStorage.setItem(LS_KEY, JSON.stringify(rows));
   }, [rows]);
 
+  // Loading states
   const [loadingId, setLoadingId] = useState(null);
   const [loadingAll, setLoadingAll] = useState(false);
   const [recalcBusy, setRecalcBusy] = useState(false);
 
+  // Totals
   const totals = useMemo(() => {
     const t = calcTotals(rows);
     return {
@@ -72,6 +77,7 @@ export default function App() {
     };
   }, [rows]);
 
+  // Row helpers
   const addRow = () =>
     setRows((r) => [
       ...r,
@@ -95,6 +101,7 @@ export default function App() {
 
   const removeRow = (id) => setRows((r) => r.filter((x) => x.id !== id));
 
+  // Recalc all (sans refetch)
   const recalcAll = () => {
     setRecalcBusy(true);
     setRows((rws) =>
@@ -106,6 +113,7 @@ export default function App() {
     setTimeout(() => setRecalcBusy(false), 150);
   };
 
+  // Fetch 1 ligne
   async function refreshPrice(id, cgIdRaw) {
     const cgId = cgIdRaw?.toLowerCase()?.trim();
     if (!cgId) return;
@@ -130,6 +138,7 @@ export default function App() {
     }
   }
 
+  // Fetch ALL ids groupés
   async function refreshAllPrices() {
     const ids = Array.from(
       new Set(rows.map((r) => r.cgId?.toLowerCase()?.trim()).filter(Boolean))
@@ -253,6 +262,36 @@ export default function App() {
 
       {/* TABLE */}
       <section style={{ maxWidth: 1360, margin: "0 auto" }}>
+        {/* Entête + bouton Add */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <h2 style={{ fontSize: 20, fontWeight: "bold" }}>Airdrops</h2>
+          <button
+            onClick={addRow}
+            style={{
+              background: CELO_YELLOW,
+              color: "#000",
+              fontWeight: 700,
+              border: "none",
+              borderRadius: 10,
+              padding: "10px 18px",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(252,255,82,0.3)",
+              transition: "all .2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
+            onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
+          >
+            + Add
+          </button>
+        </div>
+
         <div style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 10 }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -411,15 +450,15 @@ export default function App() {
                         title="Delete"
                         aria-label="Delete row"
                         style={{
-                          background: "#ff3b30",     // rouge
-                          color: "#fff",             // croix blanche
+                          background: "#ff3b30",
+                          color: "#fff",
                           border: "none",
                           padding: "6px 10px",
-                          borderRadius: 10,          // pastille
+                          borderRadius: 10,
                           fontWeight: 800,
                           lineHeight: 1,
                           cursor: "pointer",
-                          boxShadow: "0 6px 18px rgba(255,59,48,0.45)", // relief
+                          boxShadow: "0 6px 18px rgba(255,59,48,0.45)",
                           transform: "translateY(0)",
                           transition: "all .18s ease",
                         }}
@@ -465,7 +504,7 @@ function Card({ title, value, accent = false, tone = "neutral", theme = "dark" }
         borderRadius: 12,
         padding: 20,
         border: `1px solid var(--border)`,
-        width: 300, // un poil plus large pour respirer
+        width: 300,
         textAlign: "center",
         boxShadow: "0 0 10px rgba(0,0,0,0.08)",
       }}
