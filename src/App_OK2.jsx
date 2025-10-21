@@ -16,6 +16,8 @@ function usd(n) {
     maximumFractionDigits: 2,
   });
 }
+
+// calculs robustes (équivalent de calcRow / calcTotals)
 const toNum = (v) => (Number.isFinite(v) ? v : Number(v || 0));
 
 function calcRow(row, priceNow) {
@@ -28,6 +30,7 @@ function calcRow(row, priceNow) {
     pnlUsd: Number(pnl.toFixed(2)),
   };
 }
+
 function calcTotals(rows) {
   return rows.reduce(
     (acc, r) => {
@@ -60,12 +63,9 @@ export default function App() {
     localStorage.setItem(LS_KEY, JSON.stringify(rows));
   }, [rows]);
 
-  // Loading states
-  const [loadingId, setLoadingId] = useState(null);  // refresh 1 ligne
-  const [loadingAll, setLoadingAll] = useState(false); // refresh global
-  const [recalcBusy, setRecalcBusy] = useState(false); // recalc sans fetch
+  const [loadingId, setLoadingId] = useState(null);
 
-  // --- Totals ---
+  // --- Totals (utilise les calc robustes) ---
   const totals = useMemo(() => {
     const t = calcTotals(rows);
     return {
@@ -99,20 +99,7 @@ export default function App() {
 
   const removeRow = (id) => setRows((r) => r.filter((x) => x.id !== id));
 
-  // --- Recalc all (sans refetch : utilise qty/claimUsd/priceNow existants) ---
-  const recalcAll = () => {
-    setRecalcBusy(true);
-    setRows((rws) =>
-      rws.map((row) => {
-        const price = toNum(row.priceNow);
-        const { valueNowUsd, pnlUsd } = calcRow(row, price);
-        return { ...row, valueNowUsd, pnlUsd };
-      })
-    );
-    setTimeout(() => setRecalcBusy(false), 150);
-  };
-
-  // --- Fetch CoinGecko + calculs robustes pour UNE ligne ---
+  // --- Fetch CoinGecko + calculs robustes ---
   async function refreshPrice(id, cgIdRaw) {
     const cgId = cgIdRaw?.toLowerCase()?.trim();
     if (!cgId) return;
@@ -126,48 +113,15 @@ export default function App() {
       const price = j?.[cgId]?.usd;
 
       if (typeof price === "number") {
+        // récupère la row actuelle pour calculer proprement
         const row = rows.find((r) => r.id === id);
         const { valueNowUsd, pnlUsd } = calcRow(row || {}, price);
         updateRow(id, { priceNow: price, valueNowUsd, pnlUsd });
       }
     } catch (e) {
       console.error(e);
-      alert("Erreur lors du refresh de ce prix.");
     } finally {
       setLoadingId(null);
-    }
-  }
-
-  // --- Refresh ALL prices (1 requête pour tous les cgId uniques) ---
-  async function refreshAllPrices() {
-    const ids = Array.from(
-      new Set(rows.map((r) => r.cgId?.toLowerCase()?.trim()).filter(Boolean))
-    );
-    if (ids.length === 0) return;
-    setLoadingAll(true);
-    try {
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(
-        ids.join(",")
-      )}&vs_currencies=usd`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      setRows((prev) =>
-        prev.map((row) => {
-          const key = row.cgId?.toLowerCase()?.trim();
-          const price = key ? data?.[key]?.usd : undefined;
-          if (typeof price === "number") {
-            const { valueNowUsd, pnlUsd } = calcRow(row, price);
-            return { ...row, priceNow: price, valueNowUsd, pnlUsd };
-          }
-          return row;
-        })
-      );
-    } catch (e) {
-      console.error(e);
-      alert("Erreur lors du refresh global des prix CoinGecko.");
-    } finally {
-      setLoadingAll(false);
     }
   }
 
@@ -208,25 +162,15 @@ export default function App() {
         </div>
       </div>
 
-      {/* Toolbar */}
+      {/* Toolbar (export/import) */}
       <div style={{ maxWidth: 1100, margin: "0 auto", marginBottom: 12 }}>
         <Toolbar
           data={rows}
-          filenameBase="airdrop-tracker"
           onImport={(payload) => {
             if (Array.isArray(payload)) setRows(payload);
             else alert("Fichier JSON invalide (attendu: tableau de lignes).");
           }}
-          onRecalcAll={recalcAll}
-          onRefreshAll={refreshAllPrices}
-          isRefreshingAll={loadingAll}
-          isRecalculating={recalcBusy}
         />
-        {loadingAll && (
-          <div style={{ marginTop: 8, color: "#aaa", fontSize: 12 }}>
-            Refresh ALL prices… ⏳
-          </div>
-        )}
       </div>
 
       {/* TOTAL CARDS */}
@@ -305,6 +249,7 @@ export default function App() {
               )}
 
               {rows.map((r) => {
+                // valeurs dérivées avec fallback si valueNowUsd/pnlUsd pas encore posées
                 const current =
                   r.valueNowUsd != null
                     ? toNum(r.valueNowUsd)
@@ -350,10 +295,6 @@ export default function App() {
                         onChange={(e) =>
                           updateRow(r.id, { qty: Number(e.target.value) })
                         }
-                        onBlur={() => {
-                          const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
-                          updateRow(r.id, { valueNowUsd, pnlUsd });
-                        }}
                         style={{ ...inputStyle, width: 90, textAlign: "right" }}
                       />
                     </Td>
@@ -373,10 +314,6 @@ export default function App() {
                         onChange={(e) =>
                           updateRow(r.id, { claimUsd: Number(e.target.value) })
                         }
-                        onBlur={() => {
-                          const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
-                          updateRow(r.id, { valueNowUsd, pnlUsd });
-                        }}
                         style={{ ...inputStyle, width: 110, textAlign: "right" }}
                       />
                     </Td>

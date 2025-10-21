@@ -1,78 +1,37 @@
-// src/App.jsx
 import { useEffect, useMemo, useState } from "react";
-import logo from "./assets/logo.png";
-import Toolbar from "./components/Toolbar";
+import logo from "./assets/logo.png"; // <- ton logo local
 
 const CELO_YELLOW = "#FCFF52";
 const BG = "#1A1A1A";
 const LS_KEY = "airdrop_tracker_rows_v1";
 
-// ---------- Helpers ----------
 function usd(n) {
   if (n == null || Number.isNaN(n)) return "—";
-  return Number(n).toLocaleString(undefined, {
+  return n.toLocaleString(undefined, {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 2,
   });
 }
-const toNum = (v) => (Number.isFinite(v) ? v : Number(v || 0));
 
-function calcRow(row, priceNow) {
-  const qty = toNum(row.qty);
-  const claim = toNum(row.claimUsd);
-  const now = qty * toNum(priceNow);
-  const pnl = now - claim;
-  return {
-    valueNowUsd: Number(now.toFixed(2)),
-    pnlUsd: Number(pnl.toFixed(2)),
-  };
-}
-function calcTotals(rows) {
-  return rows.reduce(
-    (acc, r) => {
-      const claim = toNum(r.claimUsd);
-      const now =
-        r.valueNowUsd != null
-          ? toNum(r.valueNowUsd)
-          : toNum(r.qty) * toNum(r.priceNow);
-      const pnl = r.pnlUsd != null ? toNum(r.pnlUsd) : now - claim;
-      acc.claim += claim;
-      acc.now += now;
-      acc.pnl += pnl;
-      return acc;
-    },
-    { claim: 0, now: 0, pnl: 0 }
-  );
-}
-
-// ---------- Component ----------
 export default function App() {
   // --- Data & persistence ---
   const [rows, setRows] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_KEY)) ?? [];
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) ?? []; }
+    catch { return []; }
   });
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(rows));
-  }, [rows]);
+  useEffect(() => { localStorage.setItem(LS_KEY, JSON.stringify(rows)); }, [rows]);
 
-  // Loading states
-  const [loadingId, setLoadingId] = useState(null);  // refresh 1 ligne
-  const [loadingAll, setLoadingAll] = useState(false); // refresh global
-  const [recalcBusy, setRecalcBusy] = useState(false); // recalc sans fetch
+  const [loadingId, setLoadingId] = useState(null);
 
   // --- Totals ---
   const totals = useMemo(() => {
-    const t = calcTotals(rows);
-    return {
-      claim: Number(t.claim.toFixed(2)),
-      current: Number(t.now.toFixed(2)),
-      pnl: Number(t.pnl.toFixed(2)),
-    };
+    const claim = rows.reduce((s, r) => s + (Number(r.claimUsd) || 0), 0);
+    const current = rows.reduce(
+      (s, r) => s + (Number(r.qty) || 0) * (Number(r.priceNow) || 0),
+      0
+    );
+    return { claim, current, pnl: current - claim };
   }, [rows]);
 
   // --- Row helpers ---
@@ -88,8 +47,6 @@ export default function App() {
         cgId: "",
         claimUsd: 0,
         priceNow: 0,
-        valueNowUsd: 0,
-        pnlUsd: 0,
         soldUsd: null,
       },
     ]);
@@ -99,22 +56,7 @@ export default function App() {
 
   const removeRow = (id) => setRows((r) => r.filter((x) => x.id !== id));
 
-  // --- Recalc all (sans refetch : utilise qty/claimUsd/priceNow existants) ---
-  const recalcAll = () => {
-    setRecalcBusy(true);
-    setRows((rws) =>
-      rws.map((row) => {
-        const price = toNum(row.priceNow);
-        const { valueNowUsd, pnlUsd } = calcRow(row, price);
-        return { ...row, valueNowUsd, pnlUsd };
-      })
-    );
-    setTimeout(() => setRecalcBusy(false), 150);
-  };
-
-  // --- Fetch CoinGecko + calculs robustes pour UNE ligne ---
-  async function refreshPrice(id, cgIdRaw) {
-    const cgId = cgIdRaw?.toLowerCase()?.trim();
+  async function refreshPrice(id, cgId) {
     if (!cgId) return;
     setLoadingId(id);
     try {
@@ -123,51 +65,10 @@ export default function App() {
       )}&vs_currencies=usd`;
       const res = await fetch(url);
       const j = await res.json();
-      const price = j?.[cgId]?.usd;
-
-      if (typeof price === "number") {
-        const row = rows.find((r) => r.id === id);
-        const { valueNowUsd, pnlUsd } = calcRow(row || {}, price);
-        updateRow(id, { priceNow: price, valueNowUsd, pnlUsd });
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Erreur lors du refresh de ce prix.");
+      const p = j?.[cgId]?.usd;
+      if (typeof p === "number") updateRow(id, { priceNow: p });
     } finally {
       setLoadingId(null);
-    }
-  }
-
-  // --- Refresh ALL prices (1 requête pour tous les cgId uniques) ---
-  async function refreshAllPrices() {
-    const ids = Array.from(
-      new Set(rows.map((r) => r.cgId?.toLowerCase()?.trim()).filter(Boolean))
-    );
-    if (ids.length === 0) return;
-    setLoadingAll(true);
-    try {
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(
-        ids.join(",")
-      )}&vs_currencies=usd`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      setRows((prev) =>
-        prev.map((row) => {
-          const key = row.cgId?.toLowerCase()?.trim();
-          const price = key ? data?.[key]?.usd : undefined;
-          if (typeof price === "number") {
-            const { valueNowUsd, pnlUsd } = calcRow(row, price);
-            return { ...row, priceNow: price, valueNowUsd, pnlUsd };
-          }
-          return row;
-        })
-      );
-    } catch (e) {
-      console.error(e);
-      alert("Erreur lors du refresh global des prix CoinGecko.");
-    } finally {
-      setLoadingAll(false);
     }
   }
 
@@ -181,7 +82,7 @@ export default function App() {
         fontFamily: "Inter, system-ui, Arial, sans-serif",
       }}
     >
-      {/* HEADER */}
+      {/* HEADER avec logo + badge jaune */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div
           style={{
@@ -206,27 +107,6 @@ export default function App() {
           />
           AIRDROP TRACKER
         </div>
-      </div>
-
-      {/* Toolbar */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", marginBottom: 12 }}>
-        <Toolbar
-          data={rows}
-          filenameBase="airdrop-tracker"
-          onImport={(payload) => {
-            if (Array.isArray(payload)) setRows(payload);
-            else alert("Fichier JSON invalide (attendu: tableau de lignes).");
-          }}
-          onRecalcAll={recalcAll}
-          onRefreshAll={refreshAllPrices}
-          isRefreshingAll={loadingAll}
-          isRecalculating={recalcBusy}
-        />
-        {loadingAll && (
-          <div style={{ marginTop: 8, color: "#aaa", fontSize: 12 }}>
-            Refresh ALL prices… ⏳
-          </div>
-        )}
       </div>
 
       {/* TOTAL CARDS */}
@@ -295,24 +175,17 @@ export default function App() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={11}
-                    style={{ textAlign: "center", padding: 20, color: "#999" }}
-                  >
+                  <td colSpan={11} style={{ textAlign: "center", padding: 20, color: "#999" }}>
                     Click “+ Add” to start.
                   </td>
                 </tr>
               )}
 
               {rows.map((r) => {
-                const current =
-                  r.valueNowUsd != null
-                    ? toNum(r.valueNowUsd)
-                    : toNum(r.qty) * toNum(r.priceNow);
-                const pnl =
-                  r.pnlUsd != null ? toNum(r.pnlUsd) : current - toNum(r.claimUsd);
-                const pct = toNum(r.claimUsd) ? pnl / toNum(r.claimUsd) : 0;
-                const pctStr = toNum(r.claimUsd) ? `${(pct * 100).toFixed(2)}%` : "—";
+                const current = (Number(r.qty) || 0) * (Number(r.priceNow) || 0);
+                const pnl = current - (Number(r.claimUsd) || 0);
+                const pct = r.claimUsd ? pnl / Number(r.claimUsd) : 0;
+                const pctStr = r.claimUsd ? `${(pct * 100).toFixed(2)}%` : "—";
                 const pctColor = pct > 0 ? "limegreen" : pct < 0 ? "red" : "#ccc";
                 const mood = pct > 0 ? "😄" : pct < 0 ? "😞" : "😐";
 
@@ -347,13 +220,7 @@ export default function App() {
                         type="number"
                         step="any"
                         value={r.qty}
-                        onChange={(e) =>
-                          updateRow(r.id, { qty: Number(e.target.value) })
-                        }
-                        onBlur={() => {
-                          const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
-                          updateRow(r.id, { valueNowUsd, pnlUsd });
-                        }}
+                        onChange={(e) => updateRow(r.id, { qty: Number(e.target.value) })}
                         style={{ ...inputStyle, width: 90, textAlign: "right" }}
                       />
                     </Td>
@@ -370,13 +237,7 @@ export default function App() {
                         type="number"
                         step="any"
                         value={r.claimUsd}
-                        onChange={(e) =>
-                          updateRow(r.id, { claimUsd: Number(e.target.value) })
-                        }
-                        onBlur={() => {
-                          const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
-                          updateRow(r.id, { valueNowUsd, pnlUsd });
-                        }}
+                        onChange={(e) => updateRow(r.id, { claimUsd: Number(e.target.value) })}
                         style={{ ...inputStyle, width: 110, textAlign: "right" }}
                       />
                     </Td>
@@ -401,10 +262,7 @@ export default function App() {
                         </button>
                       </div>
                     </Td>
-                    <Td
-                      align="right"
-                      style={{ color: pnl > 0 ? "limegreen" : pnl < 0 ? "red" : "#ccc" }}
-                    >
+                    <Td align="right" style={{ color: pnl > 0 ? "limegreen" : pnl < 0 ? "red" : "#ccc" }}>
                       {usd(pnl)}
                     </Td>
                     <Td align="right" style={{ color: pctColor }}>
@@ -438,12 +296,7 @@ export default function App() {
                     <Td align="right">
                       <button
                         onClick={() => removeRow(r.id)}
-                        style={{
-                          color: "#888",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
+                        style={{ color: "#888", background: "none", border: "none", cursor: "pointer" }}
                         title="Delete"
                       >
                         ✕
@@ -456,9 +309,7 @@ export default function App() {
           </table>
         </div>
 
-        <footer
-          style={{ textAlign: "center", marginTop: 30, color: "#777", fontSize: 12 }}
-        >
+        <footer style={{ textAlign: "center", marginTop: 30, color: "#777", fontSize: 12 }}>
           Prices from CoinGecko • CELO yellow theme • Data saved locally
         </footer>
       </section>
@@ -491,14 +342,7 @@ function Card({ title, value, accent = false, tone = "neutral" }) {
       }}
     >
       <div style={{ fontSize: 12, color: "#aaa" }}>{title}</div>
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 800,
-          marginTop: 6,
-          color: accent ? CELO_YELLOW : color,
-        }}
-      >
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 6, color: accent ? CELO_YELLOW : color }}>
         {value}
       </div>
     </div>
@@ -520,7 +364,6 @@ function Th({ children, align = "left" }) {
     </th>
   );
 }
-
 function Td({ children, align = "left" }) {
   return <td style={{ textAlign: align, padding: "8px 12px" }}>{children}</td>;
 }

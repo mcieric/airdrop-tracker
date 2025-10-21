@@ -16,6 +16,7 @@ function usd(n) {
     maximumFractionDigits: 2,
   });
 }
+
 const toNum = (v) => (Number.isFinite(v) ? v : Number(v || 0));
 
 function calcRow(row, priceNow) {
@@ -28,6 +29,7 @@ function calcRow(row, priceNow) {
     pnlUsd: Number(pnl.toFixed(2)),
   };
 }
+
 function calcTotals(rows) {
   return rows.reduce(
     (acc, r) => {
@@ -60,10 +62,7 @@ export default function App() {
     localStorage.setItem(LS_KEY, JSON.stringify(rows));
   }, [rows]);
 
-  // Loading states
-  const [loadingId, setLoadingId] = useState(null);  // refresh 1 ligne
-  const [loadingAll, setLoadingAll] = useState(false); // refresh global
-  const [recalcBusy, setRecalcBusy] = useState(false); // recalc sans fetch
+  const [loadingId, setLoadingId] = useState(null);
 
   // --- Totals ---
   const totals = useMemo(() => {
@@ -101,7 +100,6 @@ export default function App() {
 
   // --- Recalc all (sans refetch : utilise qty/claimUsd/priceNow existants) ---
   const recalcAll = () => {
-    setRecalcBusy(true);
     setRows((rws) =>
       rws.map((row) => {
         const price = toNum(row.priceNow);
@@ -109,7 +107,6 @@ export default function App() {
         return { ...row, valueNowUsd, pnlUsd };
       })
     );
-    setTimeout(() => setRecalcBusy(false), 150);
   };
 
   // --- Fetch CoinGecko + calculs robustes pour UNE ligne ---
@@ -132,42 +129,8 @@ export default function App() {
       }
     } catch (e) {
       console.error(e);
-      alert("Erreur lors du refresh de ce prix.");
     } finally {
       setLoadingId(null);
-    }
-  }
-
-  // --- Refresh ALL prices (1 requête pour tous les cgId uniques) ---
-  async function refreshAllPrices() {
-    const ids = Array.from(
-      new Set(rows.map((r) => r.cgId?.toLowerCase()?.trim()).filter(Boolean))
-    );
-    if (ids.length === 0) return;
-    setLoadingAll(true);
-    try {
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(
-        ids.join(",")
-      )}&vs_currencies=usd`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      setRows((prev) =>
-        prev.map((row) => {
-          const key = row.cgId?.toLowerCase()?.trim();
-          const price = key ? data?.[key]?.usd : undefined;
-          if (typeof price === "number") {
-            const { valueNowUsd, pnlUsd } = calcRow(row, price);
-            return { ...row, priceNow: price, valueNowUsd, pnlUsd };
-          }
-          return row;
-        })
-      );
-    } catch (e) {
-      console.error(e);
-      alert("Erreur lors du refresh global des prix CoinGecko.");
-    } finally {
-      setLoadingAll(false);
     }
   }
 
@@ -218,15 +181,7 @@ export default function App() {
             else alert("Fichier JSON invalide (attendu: tableau de lignes).");
           }}
           onRecalcAll={recalcAll}
-          onRefreshAll={refreshAllPrices}
-          isRefreshingAll={loadingAll}
-          isRecalculating={recalcBusy}
         />
-        {loadingAll && (
-          <div style={{ marginTop: 8, color: "#aaa", fontSize: 12 }}>
-            Refresh ALL prices… ⏳
-          </div>
-        )}
       </div>
 
       {/* TOTAL CARDS */}
@@ -351,6 +306,7 @@ export default function App() {
                           updateRow(r.id, { qty: Number(e.target.value) })
                         }
                         onBlur={() => {
+                          // recalc immédiat si qty modifiée
                           const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
                           updateRow(r.id, { valueNowUsd, pnlUsd });
                         }}
@@ -374,6 +330,7 @@ export default function App() {
                           updateRow(r.id, { claimUsd: Number(e.target.value) })
                         }
                         onBlur={() => {
+                          // recalc immédiat si claimUsd modifiée
                           const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
                           updateRow(r.id, { valueNowUsd, pnlUsd });
                         }}
