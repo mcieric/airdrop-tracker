@@ -217,7 +217,7 @@ export default function App() {
       </div>
 
       {/* Toolbar */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", marginBottom: 12 }}>
+      <div style={{ maxWidth: 1360, margin: "0 auto", marginBottom: 12 }}>
         <Toolbar
           data={rows}
           filenameBase="airdrop-tracker"
@@ -243,7 +243,6 @@ export default function App() {
         }}
       >
         <Card title="Claim Total" value={usd(totals.claim)} />
-        {/* on passe le thème pour gérer l’accent correctement */}
         <Card title="Current Total" value={usd(totals.current)} accent theme={theme} />
         <Card
           title="Total PNL"
@@ -253,34 +252,9 @@ export default function App() {
       </section>
 
       {/* TABLE */}
-      <section style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 10,
-          }}
-        >
-          <h2 style={{ fontSize: 20, fontWeight: "bold" }}>Airdrops</h2>
-          <button
-            onClick={addRow}
-            style={{
-              background: CELO_YELLOW,
-              color: "black",
-              fontWeight: 600,
-              border: "none",
-              borderRadius: 6,
-              padding: "8px 14px",
-              cursor: "pointer",
-            }}
-          >
-            + Add
-          </button>
-        </div>
-
+      <section style={{ maxWidth: 1360, margin: "0 auto" }}>
         <div style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 10 }}>
-          <table>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
                 <Th>Date</Th>
@@ -299,10 +273,7 @@ export default function App() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={11}
-                    style={{ textAlign: "center", padding: 20, color: "#999" }}
-                  >
+                  <td colSpan={11} style={{ textAlign: "center", padding: 20, color: "#999" }}>
                     Click “+ Add” to start.
                   </td>
                 </tr>
@@ -351,9 +322,7 @@ export default function App() {
                         type="number"
                         step="any"
                         value={r.qty}
-                        onChange={(e) =>
-                          updateRow(r.id, { qty: Number(e.target.value) })
-                        }
+                        onChange={(e) => updateRow(r.id, { qty: Number(e.target.value) })}
                         onBlur={() => {
                           const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
                           updateRow(r.id, { valueNowUsd, pnlUsd });
@@ -374,9 +343,7 @@ export default function App() {
                         type="number"
                         step="any"
                         value={r.claimUsd}
-                        onChange={(e) =>
-                          updateRow(r.id, { claimUsd: Number(e.target.value) })
-                        }
+                        onChange={(e) => updateRow(r.id, { claimUsd: Number(e.target.value) })}
                         onBlur={() => {
                           const { valueNowUsd, pnlUsd } = calcRow(r, r.priceNow);
                           updateRow(r.id, { valueNowUsd, pnlUsd });
@@ -405,10 +372,7 @@ export default function App() {
                         </button>
                       </div>
                     </Td>
-                    <Td
-                      align="right"
-                      style={{ color: pnl > 0 ? "limegreen" : pnl < 0 ? "red" : "#ccc" }}
-                    >
+                    <Td align="right" style={{ color: pnl > 0 ? "limegreen" : pnl < 0 ? "red" : "#ccc" }}>
                       {usd(pnl)}
                     </Td>
                     <Td align="right" style={{ color: pctColor }}>
@@ -439,18 +403,30 @@ export default function App() {
                         </button>
                       )}
                     </Td>
-                    <Td align="right">
+                    <Td align="right" style={{ minWidth: 70 }}>
                       <button
-                        onClick={() => removeRow(r.id)}
-                        style={{
-                          color: "#888",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
+                        onClick={() => {
+                          if (confirm("Supprimer cette ligne ?")) removeRow(r.id);
                         }}
                         title="Delete"
+                        aria-label="Delete row"
+                        style={{
+                          background: "#ff3b30",     // rouge
+                          color: "#fff",             // croix blanche
+                          border: "none",
+                          padding: "6px 10px",
+                          borderRadius: 10,          // pastille
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          cursor: "pointer",
+                          boxShadow: "0 6px 18px rgba(255,59,48,0.45)", // relief
+                          transform: "translateY(0)",
+                          transition: "all .18s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.08)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
                       >
-                        ✕
+                        ✖
                       </button>
                     </Td>
                   </tr>
@@ -460,9 +436,7 @@ export default function App() {
           </table>
         </div>
 
-        <footer
-          style={{ textAlign: "center", marginTop: 30, color: "#777", fontSize: 12 }}
-        >
+        <footer style={{ textAlign: "center", marginTop: 30, color: "#777", fontSize: 12 }}>
           Prices from CoinGecko • CELO yellow theme • Data saved locally
         </footer>
       </section>
@@ -481,11 +455,8 @@ const inputStyle = {
 };
 
 function Card({ title, value, accent = false, tone = "neutral", theme = "dark" }) {
-  const baseColor =
-    tone === "good" ? "limegreen" : tone === "bad" ? "red" : "var(--fg)";
-
-  // Ici on force l’accent selon le thème pour la lisibilité
-  const accentColor = theme === "dark" ? CELO_YELLOW : "#000000";
+  const baseColor = tone === "good" ? "limegreen" : tone === "bad" ? "red" : "var(--fg)";
+  const accentColor = theme === "dark" ? CELO_YELLOW : "#000000"; // jaune en dark, noir en light
 
   return (
     <div
@@ -494,7 +465,7 @@ function Card({ title, value, accent = false, tone = "neutral", theme = "dark" }
         borderRadius: 12,
         padding: 20,
         border: `1px solid var(--border)`,
-        width: 240,
+        width: 300, // un poil plus large pour respirer
         textAlign: "center",
         boxShadow: "0 0 10px rgba(0,0,0,0.08)",
       }}
@@ -502,7 +473,7 @@ function Card({ title, value, accent = false, tone = "neutral", theme = "dark" }
       <div style={{ fontSize: 12, color: "#aaa" }}>{title}</div>
       <div
         style={{
-          fontSize: 22,
+          fontSize: 26,
           fontWeight: 800,
           marginTop: 6,
           color: accent ? accentColor : baseColor,
@@ -519,10 +490,11 @@ function Th({ children, align = "left" }) {
     <th
       style={{
         textAlign: align,
-        padding: "10px 12px",
+        padding: "14px 12px",
         fontWeight: 700,
         fontSize: 14,
         borderBottom: "1px solid var(--border)",
+        whiteSpace: "nowrap",
       }}
     >
       {children}
@@ -531,5 +503,5 @@ function Th({ children, align = "left" }) {
 }
 
 function Td({ children, align = "left" }) {
-  return <td style={{ textAlign: align, padding: "8px 12px" }}>{children}</td>;
+  return <td style={{ textAlign: align, padding: "10px 12px" }}>{children}</td>;
 }

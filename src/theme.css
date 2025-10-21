@@ -1,12 +1,10 @@
-/* src/theme.css */
 :root {
   --bg: #ffffff;
   --fg: #111111;
   --card-bg: #f6f7f9;
-  --accent: #FCFF52; /* CELO yellow */
+  --accent: #FCFF52;
   --border: #e5e7eb;
 }
-
 [data-theme="dark"] {
   --bg: #1a1a1a;
   --fg: #ffffff;
@@ -14,11 +12,7 @@
   --accent: #FCFF52;
   --border: #2a2f36;
 }
-
-html, body, #root {
-  height: 100%;
-}
-
+html, body, #root { height: 100%; }
 body {
   background: var(--bg);
   color: var(--fg);
@@ -27,17 +21,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* micro-animations utiles */
-button, input {
-  transition: all 0.2s ease;
-}
-button:hover {
-  filter: brightness(1.07);
-  transform: translateY(-1px);
-}
-
-/* table */
+button, input { transition: all 0.2s ease; }
+button:hover { filter: brightness(1.07); transform: translateY(-1px); }
 table { width: 100%; border-collapse: collapse; }
 thead { background: #111; color: #ccc; }
 [data-theme="light"] thead { background: #f2f3f5; color: #4b5563; }

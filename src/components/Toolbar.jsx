@@ -1,4 +1,3 @@
-// src/components/Toolbar.jsx
 import React from "react";
 
 export default function Toolbar({
@@ -7,7 +6,6 @@ export default function Toolbar({
   onRecalcAll,
   onRefreshAll,
   filenameBase = "airdrop-tracker",
-  // nouveaux états
   isRefreshingAll = false,
   isRecalculating = false,
 }) {
@@ -21,9 +19,7 @@ export default function Toolbar({
   };
 
   const exportJSON = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const name = `${filenameBase}-${new Date().toISOString().slice(0, 10)}.json`;
     download(blob, name);
   };
@@ -61,55 +57,31 @@ export default function Toolbar({
       }
     };
     reader.readAsText(file);
-    e.target.value = ""; // réimport possible du même fichier
+    e.target.value = "";
   };
 
   const btnBase = "px-3 py-1 rounded font-semibold cursor-pointer";
   const dark = { background: "#111418", color: "#fff", border: "1px solid #273142" };
   const accent = { background: "#FCFF52", color: "#000", border: "1px solid #d2d555" };
-  const disabledStyle = { opacity: 0.6, cursor: "not-allowed" };
+  const disabled = { opacity: 0.6, cursor: "not-allowed" };
 
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      <button
-        onClick={exportJSON}
-        className={btnBase}
-        style={dark}
-        title="Exporter vos données en JSON"
-      >
-        Export JSON
-      </button>
+    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <button onClick={exportJSON} className={btnBase} style={dark}>Export JSON</button>
 
-      <label
-        className={btnBase}
-        style={dark}
-        title="Importer un fichier JSON exporté"
-      >
+      <label className={btnBase} style={dark}>
         Import JSON
-        <input
-          type="file"
-          accept="application/json"
-          className="hidden"
-          style={{ display: "none" }}
-          onChange={importJSON}
-        />
+        <input type="file" accept="application/json" style={{ display: "none" }} onChange={importJSON} />
       </label>
 
-      <button
-        onClick={exportCSV}
-        className={btnBase}
-        style={dark}
-        title="Exporter au format CSV"
-      >
-        Export CSV
-      </button>
+      <button onClick={exportCSV} className={btnBase} style={dark}>Export CSV</button>
 
       <button
         onClick={onRefreshAll}
         className={btnBase}
-        style={{ ...dark, ...(isRefreshingAll ? disabledStyle : null) }}
-        title="Récupère les prix CoinGecko pour toutes les lignes"
+        style={{ ...dark, ...(isRefreshingAll ? disabled : null) }}
         disabled={isRefreshingAll}
+        title="Récupère les prix CoinGecko pour toutes les lignes"
       >
         {isRefreshingAll ? "Refreshing ALL… ⏳" : "Refresh ALL prices"}
       </button>
@@ -117,9 +89,9 @@ export default function Toolbar({
       <button
         onClick={onRecalcAll}
         className={btnBase}
-        style={{ ...accent, ...(isRecalculating || isRefreshingAll ? disabledStyle : null) }}
-        title="Recalcule Value Now & PNL pour toutes les lignes"
+        style={{ ...accent, ...(isRecalculating || isRefreshingAll ? disabled : null) }}
         disabled={isRecalculating || isRefreshingAll}
+        title="Recalcule Value Now & PNL pour toutes les lignes"
       >
         {isRecalculating ? "Recalculating… ⏳" : "Recalc all"}
       </button>
