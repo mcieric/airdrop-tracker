@@ -5,9 +5,11 @@ export default function Toolbar({
   onImport,
   onRecalcAll,
   onRefreshAll,
+  onExportPdf,          // ⬅️ nouveau
   filenameBase = "airdrop-tracker",
   isRefreshingAll = false,
   isRecalculating = false,
+  isExportingPdf = false,
 }) {
   const download = (blob, name) => {
     const url = URL.createObjectURL(blob);
@@ -60,26 +62,32 @@ export default function Toolbar({
     e.target.value = "";
   };
 
-  const btnBase = "px-3 py-1 rounded font-semibold cursor-pointer";
+  const btn = (style) => ({
+    padding: "6px 10px",
+    borderRadius: 8,
+    fontWeight: 700,
+    cursor: "pointer",
+    border: "1px solid transparent",
+    ...style,
+  });
   const dark = { background: "#111418", color: "#fff", border: "1px solid #273142" };
   const accent = { background: "#FCFF52", color: "#000", border: "1px solid #d2d555" };
   const disabled = { opacity: 0.6, cursor: "not-allowed" };
 
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <button onClick={exportJSON} className={btnBase} style={dark}>Export JSON</button>
+      <button onClick={exportJSON} style={btn(dark)}>Export JSON</button>
 
-      <label className={btnBase} style={dark}>
+      <label style={btn(dark)}>
         Import JSON
         <input type="file" accept="application/json" style={{ display: "none" }} onChange={importJSON} />
       </label>
 
-      <button onClick={exportCSV} className={btnBase} style={dark}>Export CSV</button>
+      <button onClick={exportCSV} style={btn(dark)}>Export CSV</button>
 
       <button
         onClick={onRefreshAll}
-        className={btnBase}
-        style={{ ...dark, ...(isRefreshingAll ? disabled : null) }}
+        style={btn({ ...dark, ...(isRefreshingAll ? disabled : null) })}
         disabled={isRefreshingAll}
         title="Récupère les prix CoinGecko pour toutes les lignes"
       >
@@ -88,12 +96,20 @@ export default function Toolbar({
 
       <button
         onClick={onRecalcAll}
-        className={btnBase}
-        style={{ ...accent, ...(isRecalculating || isRefreshingAll ? disabled : null) }}
+        style={btn({ ...accent, ...(isRecalculating || isRefreshingAll ? disabled : null) })}
         disabled={isRecalculating || isRefreshingAll}
         title="Recalcule Value Now & PNL pour toutes les lignes"
       >
         {isRecalculating ? "Recalculating… ⏳" : "Recalc all"}
+      </button>
+
+      <button
+        onClick={onExportPdf}
+        style={btn({ ...dark, ...(isExportingPdf ? disabled : null) })}
+        disabled={isExportingPdf}
+        title="Exporter le dashboard en PDF"
+      >
+        {isExportingPdf ? "Exporting PDF… ⏳" : "Export PDF"}
       </button>
     </div>
   );
