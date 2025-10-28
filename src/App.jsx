@@ -294,22 +294,38 @@ export default function App() {
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div style={{ maxWidth: 1360, margin: "0 auto", marginBottom: 12 }}>
-        <Toolbar
-          data={rows}
-          filenameBase="airdrop-tracker"
-          onImport={(payload) => {
-            if (Array.isArray(payload)) setRows(payload);
-            else alert("Fichier JSON invalide (attendu: tableau de lignes).");
+      {/* Toolbar — centrée sous le titre */}
+      <div
+        style={{
+          display: "grid",
+          placeItems: "center",
+          marginBottom: 12,
+          padding: "0 12px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 8,
           }}
-          onRecalcAll={recalcAll}
-          onRefreshAll={refreshAllPrices}
-          onExportPdf={handleExportPdf}
-          isRefreshingAll={loadingAll}
-          isRecalculating={recalcBusy}
-          isExportingPdf={exportingPdf}
-        />
+        >
+          <Toolbar
+            data={rows}
+            filenameBase="airdrop-tracker"
+            onImport={(payload) => {
+              if (Array.isArray(payload)) setRows(payload);
+              else alert("Fichier JSON invalide (attendu: tableau de lignes).");
+            }}
+            onRecalcAll={recalcAll}
+            onRefreshAll={refreshAllPrices}
+            onExportPdf={handleExportPdf}
+            isRefreshingAll={loadingAll}
+            isRecalculating={recalcBusy}
+            isExportingPdf={exportingPdf}
+          />
+        </div>
       </div>
 
       <div ref={pdfRef}>
