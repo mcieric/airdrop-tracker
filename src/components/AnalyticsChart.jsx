@@ -15,7 +15,7 @@ export default function AnalyticsChart({ rows = [] }) {
   const data = useMemo(() => {
     const sorted = [...rows]
       .filter((r) => r.date)
-      .sort((a, b) => a.date.localeCompare(b.date)); // <- fix: retiré le ">" parasite
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     let cumClaim = 0,
       cumNow = 0,
@@ -65,13 +65,27 @@ export default function AnalyticsChart({ rows = [] }) {
       </div>
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.15)" />
+          <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.08)" />
           <XAxis dataKey="date" stroke="#aaa" tick={{ fill: "#aaa" }} />
           <YAxis stroke="#aaa" tick={{ fill: "#aaa" }} />
-          <Tooltip />
+
+          {/* Tooltip en dark mode */}
+          <Tooltip
+            contentStyle={{
+              background: "rgba(20,20,20,0.95)",
+              border: "1px solid #2b2b2b",
+              borderRadius: 8,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+              color: "#e5e7eb",
+            }}
+            labelStyle={{ color: "#a3a3a3", fontWeight: 600 }}
+            itemStyle={{ color: "#e5e7eb" }}
+            wrapperStyle={{ outline: "none" }}
+          />
+
           <Legend />
 
-          {/* Claim — jaune doré */}
+          {/* Claim — jaune */}
           <Line
             type="monotone"
             dataKey="claim"
@@ -93,7 +107,7 @@ export default function AnalyticsChart({ rows = [] }) {
             activeDot={{ r: 5 }}
           />
 
-          {/* PNL — rouge orangé */}
+          {/* PNL — rouge */}
           <Line
             type="monotone"
             dataKey="pnl"
