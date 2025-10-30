@@ -79,8 +79,8 @@ export default function PublicDashboard(){
     return <div className="container">
       <div className="card">
         <h1>Access denied</h1>
-        <p>This public dashboard is protected by a <b>token</b>. The link must include <code>?token=...</code>.</p>
-        <p className="small">Astuce : ouvre la page sans <code>?token=</code>, clique “Enable public link (token)” puis “Copier”.</p>
+        <p>Ce dashboard public est protégé par un <b>token</b>. Le lien doit contenir <code>?token=...</code>.</p>
+        <p className="small">Astuce : ouvre la page sans <code>?token=</code>, clique “Activer lien public (token)” puis “Copier”.</p>
         <div className="space"></div>
         <Link to="/" className="btn btn-ghost">Back to app</Link>
       </div>
@@ -94,12 +94,12 @@ export default function PublicDashboard(){
     <div className="row" style={{justifyContent:"space-between"}}>
       <div>
         <h1>Airdrop Tracker — Public</h1>
-        <div className="sub">Read-only — data from localStorage</div>
+        <div className="sub">Lecture seule — données depuis localStorage</div>
       </div>
       <div className="row">
-        <button className="btn btn-yellow" onClick={enableShare}>Enable public link (token)</button>
-        <button className="btn" onClick={copyLink}>{copied?"Lien copié ✓":"Copy link"}</button>
-        <button className="btn" onClick={disableShare}>Disable link</button>
+        <button className="btn btn-yellow" onClick={enableShare}>Activer lien public (token)</button>
+        <button className="btn" onClick={copyLink}>{copied?"Lien copié ✓":"Copier le lien"}</button>
+        <button className="btn" onClick={disableShare}>Désactiver le lien</button>
         <Link to="/" className="btn btn-ghost">Back to app</Link>
       </div>
     </div>
@@ -157,6 +157,6 @@ export default function PublicDashboard(){
     </div>
 
     <div className="space"></div>
-    <div className="small">This public view hides secrets: API keys, private notes, internal tags, etc.</div>
+    <div className="small">Cette vue publique masque les secrets : API keys, notes privées, tags internes, etc.</div>
   </div>
 }

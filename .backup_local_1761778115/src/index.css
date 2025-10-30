@@ -1,0 +1,36 @@
+/* Tailwind v4 */
+@import "tailwindcss";
+
+/* Global */
+html, body, #root { height: 100%; }
+body {
+  background: #000;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* --- CELO dark helpers (utilisent @apply v4 + valeurs arbitraires) --- */
+.container-app { @apply max-w-6xl mx-auto p-4; }
+
+.card      { @apply bg-[#0f1012] border border-white/10 rounded-2xl p-4 shadow-[0_0_0_1px_rgba(255,255,255,.06),0_4px_20px_rgba(0,0,0,.5)]; }
+.card-lite { @apply bg-[#16181b] border border-white/10 rounded-2xl p-4; }
+
+.kpi { @apply card text-center; }
+.kpi .label { @apply text-xs uppercase tracking-wider text-white/70 mb-1; }
+.kpi .value { @apply text-2xl font-semibold; }
+
+.btn { @apply inline-flex items-center justify-center px-3 py-2 rounded-2xl border border-white/15 bg-[#16181b] hover:bg-[#0f1012] hover:shadow transition; }
+.btn-ghost { @apply inline-flex items-center px-3 py-2 rounded-2xl text-white/70 hover:text-white; }
+.btn-yellow {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-2xl font-semibold text-black;
+  background: #FBCC5C;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(251,204,92,.35);
+}
+.btn-yellow:hover { box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 12px 28px rgba(251,204,92,.45); }
+
+.table-wrap { @apply rounded-2xl border border-white/10 overflow-hidden; }
+.table-head { @apply bg-[#16181b] border-b border-white/10 text-sm font-semibold; }
+.table      { @apply min-w-full text-sm; }
+.table th, .table td { @apply px-4 py-2; }
+.table tr  { @apply border-t border-white/10; }
