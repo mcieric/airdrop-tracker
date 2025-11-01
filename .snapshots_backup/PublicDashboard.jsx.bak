@@ -25,7 +25,7 @@ export default function PublicDashboard(){
 
   // Charge les données locales
   useEffect(()=>{ 
-    (() => { const s = decodeSnapshotFromHash(window.location.hash); if (s) { setData(s); } else { setData(getAirdropData() || getDemoData()); } })() 
+    setData(getAirdropData() || getDemoData()) 
   },[])
 
   // ⚙️ Vérification du token — bypass en local/DEV

@@ -1,116 +1,81 @@
 import React from "react";
+import { Link } from "react-router-dom";
+// Si CopySnapshotButton n’existe pas chez toi, commente la ligne suivante.
+import CopySnapshotButton from "./CopySnapshotButton.jsx";
 
+/**
+ * Toolbar — barre d’actions du dashboard
+ *
+ * Props attendues (toutes optionnelles mais recommandées) :
+ * - currentWallet: string | undefined
+ * - onExportJSON: () => void
+ * - onImportJSON: () => void
+ * - onExportCSV: () => void
+ * - onRefreshAll: () => void
+ * - onRecalcAll: () => void
+ * - onExportPDF: () => void
+ * - isRefreshingAll: boolean
+ */
 export default function Toolbar({
-  data = [],
-  onImport,
-  onRecalcAll,
+  currentWallet,
+  onExportJSON,
+  onImportJSON,
+  onExportCSV,
   onRefreshAll,
-  onExportPdf,          // ⬅️ nouveau
-  filenameBase = "airdrop-tracker",
-  isRefreshingAll = false,
-  isRecalculating = false,
-  isExportingPdf = false,
+  onRecalcAll,
+  onExportPDF,
+  isRefreshingAll,
 }) {
-  const download = (blob, name) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const walletLower =
+    typeof currentWallet === "string" && currentWallet.length > 0
+      ? currentWallet.toLowerCase()
+      : "";
 
-  const exportJSON = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const name = `${filenameBase}-${new Date().toISOString().slice(0, 10)}.json`;
-    download(blob, name);
-  };
-
-  const exportCSV = () => {
-    const headers = [
-      "date","project","token","qty","cgId","claimUsd",
-      "priceNow","valueNowUsd","pnlUsd","soldUsd","id",
-    ];
-    const esc = (v) => {
-      if (v == null) return "";
-      const s = String(v);
-      const needsWrap = /[",\n]/.test(s);
-      const safe = s.replace(/"/g, '""');
-      return needsWrap ? `"${safe}"` : safe;
-    };
-    const rows = data.map((r) => headers.map((h) => esc(r?.[h])));
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const name = `${filenameBase}-${new Date().toISOString().slice(0, 10)}.csv`;
-    download(blob, name);
-  };
-
-  const importJSON = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(reader.result);
-        if (!Array.isArray(parsed)) throw new Error("Le JSON doit être un tableau.");
-        onImport?.(parsed);
-      } catch (err) {
-        alert("Fichier JSON invalide : " + err.message);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  const btn = (style) => ({
-    padding: "6px 10px",
-    borderRadius: 8,
-    fontWeight: 700,
-    cursor: "pointer",
-    border: "1px solid transparent",
-    ...style,
-  });
-  const dark = { background: "#111418", color: "#fff", border: "1px solid #273142" };
-  const accent = { background: "#FCFF52", color: "#000", border: "1px solid #d2d555" };
-  const disabled = { opacity: 0.6, cursor: "not-allowed" };
+  // Lien public : /public/<wallet> si dispo, sinon /public
+  const publicHref = walletLower ? `/public/${walletLower}` : "/public";
 
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <button onClick={exportJSON} style={btn(dark)}>Export JSON</button>
+    <div className="toolbar">
+      <div className="toolbar-inner" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+        {/* Titre + logo déjà gérés ailleurs ; ici juste les boutons */}
+        <div className="actions-left" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn" onClick={onExportJSON} title="Export JSON">
+            Export JSON
+          </button>
+          <button className="btn" onClick={onImportJSON} title="Import JSON">
+            Import JSON
+          </button>
+          <button className="btn" onClick={onExportCSV} title="Export CSV">
+            Export CSV
+          </button>
+          <button
+            className="btn"
+            onClick={onRefreshAll}
+            disabled={!!isRefreshingAll}
+            title="Refresh CoinGecko prices for all rows"
+          >
+            Refresh ALL prices
+          </button>
+          <button className="btn" onClick={onRecalcAll} title="Recalculate all">
+            Recalc all
+          </button>
+          <button className="btn" onClick={onExportPDF} title="Export PDF">
+            Export PDF
+          </button>
+        </div>
 
-      <label style={btn(dark)}>
-        Import JSON
-        <input type="file" accept="application/json" style={{ display: "none" }} onChange={importJSON} />
-      </label>
+        <div className="actions-right" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {/* Bouton vers la page publique */}
+          <Link className="btn btn-yellow" to={publicHref} title="Open the read-only public view">
+            View public page
+          </Link>
 
-      <button onClick={exportCSV} style={btn(dark)}>Export CSV</button>
-
-      <button
-        onClick={onRefreshAll}
-        style={btn({ ...dark, ...(isRefreshingAll ? disabled : null) })}
-        disabled={isRefreshingAll}
-        title="Récupère les prix CoinGecko pour toutes les lignes"
-      >
-        {isRefreshingAll ? "Refreshing ALL… ⏳" : "Refresh ALL prices"}
-      </button>
-
-      <button
-        onClick={onRecalcAll}
-        style={btn({ ...accent, ...(isRecalculating || isRefreshingAll ? disabled : null) })}
-        disabled={isRecalculating || isRefreshingAll}
-        title="Recalcule Value Now & PNL pour toutes les lignes"
-      >
-        {isRecalculating ? "Recalculating… ⏳" : "Recalc all"}
-      </button>
-
-      <button
-        onClick={onExportPdf}
-        style={btn({ ...dark, ...(isExportingPdf ? disabled : null) })}
-        disabled={isExportingPdf}
-        title="Exporter le dashboard en PDF"
-      >
-        {isExportingPdf ? "Exporting PDF… ⏳" : "Export PDF"}
-      </button>
+          {/* Bouton snapshot (optionnel) — commente l’import plus haut si tu ne l’as pas */}
+          {typeof CopySnapshotButton === "function" && (
+            <CopySnapshotButton wallet={currentWallet} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
