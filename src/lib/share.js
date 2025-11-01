@@ -1,38 +1,58 @@
-// src/lib/share.js
-// Gestion des liens publics tokenisés (création, vérif, suppression)
+/**
+ * Utilitaires de lien public (token) pour la page publique.
+ * Exporte: getShareToken, setShareToken, clearShareToken, generateToken, buildShareUrl
+ */
 
-const KEY_PREFIX = "airdrop-share:" // chaque wallet a sa clé unique
+const STORAGE_KEY = (wallet) => `share:token:${(wallet||"").toLowerCase()}`;
 
-// 🔑 Récupère le token associé à un wallet
+/** Récupère le token stocké pour ce wallet (ou null) */
 export function getShareToken(wallet) {
-  if (!wallet) return null
-  return localStorage.getItem(KEY_PREFIX + wallet.toLowerCase())
+  try { return localStorage.getItem(STORAGE_KEY(wallet)); }
+  catch { return null; }
 }
 
-// 💾 Enregistre un token pour un wallet
+/** Enregistre un token pour ce wallet */
 export function setShareToken(wallet, token) {
-  if (!wallet || !token) return
-  localStorage.setItem(KEY_PREFIX + wallet.toLowerCase(), token)
+  try { localStorage.setItem(STORAGE_KEY(wallet), token || ""); }
+  catch {}
 }
 
-// 🧹 Supprime le token (désactive le lien public)
+/** Supprime le token pour ce wallet */
 export function clearShareToken(wallet) {
-  if (!wallet) return
-  localStorage.removeItem(KEY_PREFIX + wallet.toLowerCase())
+  try { localStorage.removeItem(STORAGE_KEY(wallet)); }
+  catch {}
 }
 
-// ⚙️ Génère un token aléatoire (par ex. “ab29dlf84hz0...”)
-export function generateToken(len = 24) {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let out = ""
-  for (let i = 0; i < len; i++) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)]
-  }
-  return out
+/** Génère un token court (lisible) */
+export function generateToken() {
+  try {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      // court, mais suffisamment unique pour un partage
+      return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    }
+  } catch {}
+  // fallback
+  return Math.random().toString(36).slice(2, 14);
 }
 
-// 🔗 Construit l’URL complète à partager
+/**
+ * Construit l'URL publique:
+ * - HashRouter -> {origin}{pathname}#/public/{wallet}[?token=...]
+ * - BrowserRouter -> {origin}/public/{wallet}[?token=...]
+ */
 export function buildShareUrl(wallet, token) {
-  const base = window.location.origin
-  return `${base}/public/${wallet.toLowerCase()}?token=${encodeURIComponent(token)}`
+  const w = (wallet || "").toLowerCase();
+  const base = `${window.location.origin}${window.location.pathname}`;
+  const hasHash = true; // ton app utilise HashRouter
+  let url = hasHash ? `${base}#/public/${w}` : `${window.location.origin}/public/${w}`;
+  if (token) url += `?token=${encodeURIComponent(token)}`;
+  return url;
 }
+
+export default {
+  getShareToken,
+  setShareToken,
+  clearShareToken,
+  generateToken,
+  buildShareUrl,
+};

@@ -57,7 +57,7 @@ export default function PublicDashboard(){
     <div className="row" style={{justifyContent:"space-between"}}>
       <div>
         <h1>Airdrop Tracker — Public</h1>
-        <div className="sub">Lecture seule — données depuis localStorage</div>
+        <div className="sub">Read-only — data from localStorage</div>
       </div>
       <div className="row">
         <button className="btn btn-yellow" onClick={enableShare}>Activer lien public (token)</button>

@@ -1,3 +1,7 @@
+// __PD_LOGS__ : erreurs globales visibles en console (aide au debug)
+window.addEventListener("error", e => console.error("[WINERR]", e.error||e.message));
+window.addEventListener("unhandledrejection", e => console.error("[PROMISE]", e.reason));
+
 import React, { useState, useEffect } from "react"
 import { useParams, Link, useLocation } from "react-router-dom"
 import { getAirdropData, getDemoData } from "./lib/storage"
@@ -5,65 +9,104 @@ import { getShareToken, setShareToken, clearShareToken, generateToken, buildShar
 import { setMetaTags } from "./lib/meta"
 import "./index.css"
 
-function useQuery(){ const {search}=useLocation(); return new URLSearchParams(search) }
+function useQuery(){ 
+  const { search } = useLocation(); 
+  return new URLSearchParams(search);
+}
+
 const mask = (a)=>a?a.replace(/^(0x[0-9a-fA-F]{6}).+([0-9a-fA-F]{4})$/,"$1…$2"):""
 
 export default function PublicDashboard(){
+  try {
+    console.log("[PublicDashboard] MOUNT");
   const { wallet: raw } = useParams()
   const wallet = (raw || "0x88ac3d64230c8a453492ff908a02daa27e9b3429").toLowerCase()
-  const q = useQuery(); const tokenFromUrl = q.get("token") || null
+  const q = useQuery()
+  const tokenFromUrl = q.get("token") || null
 
   const [data,setData] = useState(null)
   const [copied,setCopied] = useState(false)
   const [forbidden,setForbidden] = useState(false)
   const [shareUrl,setShareUrl] = useState("")
 
-  useEffect(()=>{ setData(getAirdropData() || getDemoData()) },[])
+  // Charge les données locales
+  useEffect(()=>{ 
+    (() => { const s = decodeSnapshotFromHash(window.location.hash); if (s) { setData(s); } else { setData(getAirdropData() || getDemoData()); } })() 
+  },[])
+
+  // ⚙️ Vérification du token — bypass en local/DEV
   useEffect(()=>{
-    // Bypass token en local (localhost / 192.168.*)
     try {
       const host = window.location.hostname || "";
-      const isLocal = host == "localhost" || host.startswith("192.168.");
-      if (isLocal) { setForbidden(false); return; }
-    } catch (e) { /* ignore */ }
+      const isLocal = import.meta.env.DEV || host === "localhost" || /^192\.168\./.test(host);
+      if (isLocal) {
+        setForbidden(false);
+        return;
+      }
+    } catch(e) {
+      console.warn("Bypass local token check failed:", e);
+    }
 
     const t = getShareToken(wallet);
-    if (!t) { setForbidden(false); return; }
+    if (!t) { 
+      setForbidden(false); 
+      return;
+    }
     setForbidden(tokenFromUrl !== t);
   },[wallet,tokenFromUrl])
+
+  // 🔖 SEO tags
   useEffect(()=>{
-    if(data){ setMetaTags({wallet, tvlUSD:+data.tvlUSD||0, realizedUSD:+data.realizedUSD||0}) }
+    if(data){ 
+      setMetaTags({wallet, tvlUSD:+data.tvlUSD||0, realizedUSD:+data.realizedUSD||0}) 
+    }
   },[data, wallet])
 
-  const enableShare=()=>{ const t=generateToken(); setShareToken(wallet,t); setShareUrl(buildShareUrl(wallet,t)) }
-  const copyLink=async()=>{ const t=getShareToken(wallet); const url=t?buildShareUrl(wallet,t):window.location.origin+`/public/${wallet}`; await navigator.clipboard.writeText(url); setCopied(true); setTimeout(()=>setCopied(false),1200) }
-  const disableShare=()=>{ clearShareToken(wallet); setShareUrl("") }
+  const enableShare=()=>{ 
+    const t=generateToken(); 
+    setShareToken(wallet,t); 
+    setShareUrl(buildShareUrl(wallet,t)); 
+  }
+
+  const copyLink=async()=>{
+    const t=getShareToken(wallet);
+    const url=t?buildShareUrl(wallet,t):window.location.origin+`/public/${wallet}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true); 
+    setTimeout(()=>setCopied(false),1200);
+  }
+
+  const disableShare=()=>{ 
+    clearShareToken(wallet); 
+    setShareUrl(""); 
+  }
 
   if(forbidden){
     return <div className="container">
       <div className="card">
         <h1>Access denied</h1>
-        <p>Ce dashboard public est protégé par un <b>token</b>. Le lien doit contenir <code>?token=...</code>.</p>
-        <p className="small">Astuce : ouvre la page sans <code>?token=</code>, clique “Activer lien public (token)” puis “Copier”.</p>
+        <p>This public dashboard is protected by a <b>token</b>. The link must include <code>?token=...</code>.</p>
+        <p className="small">Astuce : ouvre la page sans <code>?token=</code>, clique “Enable public link (token)” puis “Copier”.</p>
         <div className="space"></div>
-        <Link to="/" className="btn btn-ghost">Back to app</Link>
+        <a href="/" className="btn btn-ghost">Back to app</a>
       </div>
     </div>
   }
 
-  if(!data) return <div className="container"><div className="card">Loading…</div></div>
+  if(!data) 
+    return <div className="container"><div className="card">Loading…</div></div>
 
   return <div className="container">
     <div className="row" style={{justifyContent:"space-between"}}>
       <div>
         <h1>Airdrop Tracker — Public</h1>
-        <div className="sub">Lecture seule — données depuis localStorage</div>
+        <div className="sub">Read-only — data from localStorage</div>
       </div>
       <div className="row">
-        <button className="btn btn-yellow" onClick={enableShare}>Activer lien public (token)</button>
-        <button className="btn" onClick={copyLink}>{copied?"Lien copié ✓":"Copier le lien"}</button>
-        <button className="btn" onClick={disableShare}>Désactiver le lien</button>
-        <Link to="/" className="btn btn-ghost">Back to app</Link>
+        <button className="btn btn-yellow" onClick={enableShare}>Enable public link (token)</button>
+        <button className="btn" onClick={copyLink}>{copied?"Lien copié ✓":"Copy link"}</button>
+        <button className="btn" onClick={disableShare}>Disable link</button>
+        <a href="/" className="btn btn-ghost">Back to app</a>
       </div>
     </div>
 
@@ -120,6 +163,10 @@ export default function PublicDashboard(){
     </div>
 
     <div className="space"></div>
-    <div className="small">Cette vue publique masque les secrets : API keys, notes privées, tags internes, etc.</div>
+    <div className="small">This public view hides secrets: API keys, private notes, internal tags, etc.</div>
   </div>
+  } catch(e) {
+    console.error("[PublicDashboard] render error:", e);
+    return <div style={{padding:16,color:"#f55"}}>PublicDashboard crashed: {String(e && e.message || e)}</div>;
+  }
 }

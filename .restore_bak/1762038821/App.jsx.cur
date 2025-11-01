@@ -1,0 +1,45 @@
+import React, { Suspense } from "react";
+import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import SafePublic from "./SafePublic.jsx";
+import ErrorBoundary from "./ErrorBoundary.jsx";
+
+// Lazy load de la vraie page publique
+const PublicDashboard = React.lazy(() => import("./PublicDashboard.jsx"));
+
+function Home(){
+  const demo = "0x88ac3d64230c8a453492ff908a02daa27e9b3429";
+  return (
+    <div style={{padding:24}}>
+      <h1>Airdrop Tracker — Safe Hub</h1>
+      <p>Choisis quoi tester :</p>
+      <ul>
+        <li><Link to={`/public/${demo}`}>Route SAFE (toujours OK)</Link></li>
+        <li><Link to={`/public-real/${demo}`}>Route RÉELLE (protégée par ErrorBoundary)</Link></li>
+      </ul>
+      <p style={{marginTop:12,opacity:.8}}>
+        Si la route “réelle” plante, l’ErrorBoundary affichera l’erreur au lieu d’un écran noir.
+      </p>
+    </div>
+  );
+}
+
+export default function App(){
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/public/:wallet" element={<SafePublic />} />
+        <Route
+          path="/public-real/:wallet"
+          element={
+            <ErrorBoundary>
+              <Suspense fallback={<div style={{padding:24}}>Loading PublicDashboard…</div>}>
+                <PublicDashboard />
+              </Suspense>
+            </ErrorBoundary>
+          }
+        />
+      </Routes>
+    </HashRouter>
+  );
+}

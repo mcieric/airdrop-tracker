@@ -1,0 +1,4 @@
+html,body,#root{height:100%}
+body{margin:0;background:#111;color:#eee;font-family:system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+a{color:#ffd400;text-decoration:none}
+a:hover{text-decoration:underline}

@@ -1,0 +1,20 @@
+// Helpers canoniques pour liens Public & Snapshot
+// ------------------------------------------------
+export function buildShareUrl(wallet, token) {
+  const base = window.location.origin;
+  const w = (wallet || "").toLowerCase();
+  return `${base}/public/${w}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+}
+
+export function buildSnapshotUrl(wallet, snapshotId) {
+  const base = window.location.origin;
+  const w = (wallet || "").toLowerCase();
+  return `${base}/public/${w}#s=${encodeURIComponent(snapshotId)}`;
+}
+
+// (Optionnel) utilitaire : s'assure qu'un wallet est fourni
+export function assertWalletOrThrow(wallet) {
+  const w = (wallet || "").trim();
+  if (!w) throw new Error("Missing wallet address for public/snapshot link.");
+  return w.toLowerCase();
+}
